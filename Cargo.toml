@@ -1,0 +1,6 @@
+[package]
+name = "threadgroup"
+version = "0.1.0"
+authors = ["Vincent de Phily <vincent.dephily@mobile-devices.fr>"]
+
+[dependencies]
