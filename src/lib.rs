@@ -26,7 +26,6 @@
 //! assert_eq!(JoinError::Timeout,  tg.join_timeout(Duration::new(0,10000)).unwrap_err());
 //! ```
 
-use std::panic;
 use std::sync::mpsc;
 use std::sync::mpsc::{Receiver, RecvError, RecvTimeoutError, Sender};
 use std::thread;
@@ -52,6 +51,16 @@ pub struct ThreadGroup<T> {
     tx: Sender<ThreadId>,
     rx: Receiver<ThreadId>,
     handles: Vec<JoinHandle<T>>,
+}
+
+/// Sends current thread id on the channel when this struct gets out of scope.
+struct SendOnDrop {
+    tx: Sender<ThreadId>,
+}
+impl Drop for SendOnDrop {
+    fn drop(&mut self) {
+        self.tx.send(thread::current().id()).unwrap();
+    }
 }
 
 // TODO: Allow passing something during spawn() that'll be returned during join()
@@ -91,16 +100,8 @@ impl<T> ThreadGroup<T> {
     {
         let thread_tx = self.tx.clone();
         let jh: JoinHandle<T> = thread::spawn(move || {
-            // FIXME: Playing with fire here, probably not in a safe way: no idea if f is actually
-            //        UnwindSafe. On the other hand, we're only using this so we can send() and then
-            //        resume panicing, so I guess problems won't propagate.
-            //        https://doc.rust-lang.org/stable/std/panic/trait.UnwindSafe.html
-            let ret = panic::catch_unwind(panic::AssertUnwindSafe(f));
-            thread_tx.send(thread::current().id()).unwrap();
-            match ret {
-                Ok(r) => r,
-                Err(e) => panic::resume_unwind(e),
-            }
+            let _sender = SendOnDrop{tx: thread_tx.clone()};
+            f()
         });
         self.handles.push(jh);
     }
