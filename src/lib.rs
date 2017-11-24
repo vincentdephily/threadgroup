@@ -1,26 +1,29 @@
-//! Manage a group of threads that all have the same return type and can be join()ed as a unit.
+//! Manages a group of threads that all have the same return type and can be join()ed as a unit.
 //!
 //! The implementation uses a mpsc channel internally so that children (spawned threads) can notify the parent
 //! (owner of a `ThreadGroup`) that they are finished without the parent having to use a blocking
 //! `std::thread::JoinHandle.join()` call.
 //!
 //! # Examples
-//! ```
+//! ```rust
 //! use std::thread::sleep;
 //! use std::time::Duration;
 //! use threadgroup::{JoinError, ThreadGroup};
+//!
 //! // Initialize a group of threads returning `u32`.
 //! let mut tg: ThreadGroup<u32> = ThreadGroup::new();
+//!
 //! // Start a bunch of threads that'll return or panic after a while
-//! tg.spawn::<_,u32>(|| {sleep(Duration::new(0,30000));2});
-//! tg.spawn::<_,u32>(|| {sleep(Duration::new(0,15000));panic!()});
-//! tg.spawn::<_,u32>(|| {sleep(Duration::new(10000,0));3});
-//! tg.spawn::<_,u32>(|| {sleep(Duration::new(0,10000));1});
+//! tg.spawn::<_,u32>(|| {sleep(Duration::new(0,3000000));2});
+//! tg.spawn::<_,u32>(|| {sleep(Duration::new(0,1500000));panic!()});
+//! tg.spawn::<_,u32>(|| {sleep(Duration::new(10,0));3});
+//! tg.spawn::<_,u32>(|| {sleep(Duration::new(0,1000000));1});
+//!
 //! // Join them in the order they finished
-//! asser_eq!(1,                   tg.join().unwrap());
-//! asser_eq!(JoinError::Panicked, tg.join().unwrap_err());
-//! asser_eq!(2,                   tg.join().unwrap());
-//! asser_eq!(JoinError::Timeout,  tg.join_timeout().unwrap_err());
+//! assert_eq!(1,                   tg.join().unwrap());
+//! assert_eq!(JoinError::Panicked, tg.join().unwrap_err());
+//! assert_eq!(2,                   tg.join().unwrap());
+//! assert_eq!(JoinError::Timeout,  tg.join_timeout(Duration::new(0,10000)).unwrap_err());
 //! ```
 
 use std::panic;
@@ -58,7 +61,8 @@ pub struct ThreadGroup<T> {
 impl<T> ThreadGroup<T> {
     /// Initialize a group of threads returning `T`.
     /// # Examples
-    /// ```
+    /// ```rust
+    /// use threadgroup::ThreadGroup;
     /// // spawning and joining require the struct to be mutable, and you'll need to provide type hints.
     /// let mut tg: ThreadGroup<u32> = ThreadGroup::new();
     /// ```
@@ -69,7 +73,11 @@ impl<T> ThreadGroup<T> {
 
     /// Spawn a new thread (like `std::thread::join()`) in this thread group.
     /// # Examples
-    /// ```
+    /// ```rust
+    /// use std::time::Duration;
+    /// use std::thread::sleep;
+    /// use threadgroup::{JoinError, ThreadGroup};
+    /// let mut tg: ThreadGroup<u32> = ThreadGroup::new();
     /// tg.spawn::<_,u32>(|| {sleep(Duration::new(0,1000000));1});
     /// ```
     // FIXME: Is there a way to remove the need to specify the type when calling spawn() ?
@@ -111,8 +119,10 @@ impl<T> ThreadGroup<T> {
     ///
     /// The thread will be joined in termination order, not creation order.
     /// # Examples
-    /// ```
-    /// while !tg.empty() {
+    /// ```rust
+    /// use threadgroup::ThreadGroup;
+    /// let mut tg: ThreadGroup<u32> = ThreadGroup::new();
+    /// while !tg.is_empty() {
     ///     match tg.join() {
     ///         Ok(ret) => println!("Thread returned {}", ret),
     ///         Err(e) => panic!("Oh noes !"),
@@ -131,9 +141,12 @@ impl<T> ThreadGroup<T> {
 
     /// Try to join one thread of the ThreadGroup, and give up after a timeout.
     /// # Examples
-    /// ```
-    /// loop {
-    ///    if let Err(JoinError::Timeout) = tg.join_timeout(Duration::new(5,0)) {
+    /// ```rust
+    /// use std::time::Duration;
+    /// use threadgroup::{JoinError, ThreadGroup};
+    /// let mut tg: ThreadGroup<u32> = ThreadGroup::new();
+    /// for _ in 0..10 {
+    ///    if let Err(JoinError::Timeout) = tg.join_timeout(Duration::new(0,10000)) {
     ///        println!("Still working...");
     ///    }
     /// }
@@ -171,12 +184,11 @@ impl<T> ThreadGroup<T> {
     }
 }
 
-//FIXME: This is taken from the module example, but I couldn't get it to work from there
 #[cfg(test)]
 mod tests {
     use std::thread::sleep;
     use std::time::Duration;
-    use threadgroup::{JoinError, ThreadGroup};
+    use ::{JoinError, ThreadGroup};
 
     #[test]
     fn empty_group() {
