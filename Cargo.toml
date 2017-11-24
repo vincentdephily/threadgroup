@@ -2,5 +2,9 @@
 name = "threadgroup"
 version = "0.1.0"
 authors = ["Vincent de Phily <vincent.dephily@mobile-devices.fr>"]
+description = "Manage groups of threads as one unit, join the first one that finishes, timeout on join attempts."
+readme = "README.md"
+categories = ["concurrency"]
+keywords = ["thread", "timeout"]
 
 [dependencies]
