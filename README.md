@@ -1,5 +1,9 @@
 # ThreadGroup
 
+[![crates.io](https://img.shields.io/crates/v/threadgroup.svg)](https://crates.io/crates/threadgroup)
+[![docs.rs](https://docs.rs/threadgroup/badge.svg)](https://docs.rs/threadgroup)
+[![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/vincentdephily/threadgroup/blob/master/LICENSE.txt)
+
 This crate handles a group of threads (whose closures have the same return type) as one unit,
 letting you `join()` or `join_timeout()` on the first thread of the group that is ready. Internally,
 it uses a channel to notify about finished threads.
