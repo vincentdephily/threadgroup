@@ -1,10 +1,11 @@
 # ThreadGroup
 
 This crate handles a group of threads (whose closures have the same return type) as one unit,
-letting you `join()` or `join_timeout()` on the first thread of the group that is ready.
+letting you `join()` or `join_timeout()` on the first thread of the group that is ready. Internally,
+it uses a channel to notify about finished threads.
 
 This is useful when you want to check whether any one of your threads has panicked or returned
-early, for error-handling or for progress report. This isn't possible with Rust's
+early, for error-handling or for progress report. This isn't possible with
 `std::thread::JoinHanlde.join()` because it is a blocking call, so thread 2 might panic or finish
 while you're waiting indefinitely on thread 1.
 
@@ -12,7 +13,7 @@ while you're waiting indefinitely on thread 1.
 # See also
 
 If `ThreadGroup` isn't what you needed after all and can't be improved to suit your needs, have a
-look at these other crates.
+look at these other crates :
 
 * [Thread_tryjoin](https://crates.io/crates/thread_tryjoin) gives the same benefit as
   `ThreadGroup.join_timeout()` with an API that is closer to `std`'s. But it depends on a Linux-only
@@ -27,3 +28,13 @@ look at these other crates.
   computations without repeatedly paying the high setup cost.
 * [Future](https://crates.io/crates/futures) isn't related to threads but is often a better way to
   handle "start task B whenever task A finishes" algorythms.
+
+
+# Contributing
+
+Please create issues and send pull request via
+[Github](https://github.com/vincentdephily/threadgroup).
+
+Threadgroup is licensed as MIT. Unless you explicitly state otherwise, any contribution
+intentionally submitted for inclusion in the work by you, as defined in the MIT license, shall be
+licensed as above, without any additional terms or conditions.
